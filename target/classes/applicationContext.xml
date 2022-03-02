@@ -127,13 +127,13 @@
     </bean>
     <bean class="org.example.spring.dao.cassandraDao.UserCassandraDao" name="userCassandraDao">
         <constructor-arg ref="template"/>
-
     </bean>
     <bean class="org.example.spring.dao.cassandraDao.EventCassandraDao" name="eventCassandraDao">
         <constructor-arg ref="template"/>
     </bean>
     <bean class="org.example.spring.dao.cassandraDao.TicketCassandraDao" name="ticketCassandraDao">
         <constructor-arg ref="template"/>
+        <constructor-arg ref="cassandraSession"/>
 
     </bean>
 

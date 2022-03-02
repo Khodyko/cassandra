@@ -15,7 +15,6 @@ public class UserSqlDaoImpl {
     private final String SELECT_ALL_QUERY = "SELECT * FROM userEntity";
     private final String ADD_USER = "INSERT INTO userEntity (name, email) values (?, ?)";
     private final String ADD_USER_WITH_ID = "INSERT INTO userEntity (id, name, email) values (?, ?, ?)";
-
     private JdbcTemplate jdbcTemplate;
     @Autowired
     public UserSqlDaoImpl(JdbcTemplate jdbcTemplate) {
@@ -38,12 +37,10 @@ public class UserSqlDaoImpl {
 
         @Override
         public UserEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-
             UserEntity userEntity = new UserEntity();
             userEntity.setId(rs.getInt("id"));
             userEntity.setName(rs.getString("name"));
             userEntity.setEmail(rs.getString("email"));
-
             return userEntity;
         }
     }

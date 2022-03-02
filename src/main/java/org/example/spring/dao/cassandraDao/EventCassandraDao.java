@@ -1,117 +1,67 @@
 package org.example.spring.dao.cassandraDao;
 
+import com.datastax.oss.driver.api.core.CqlSession;
+import com.datastax.oss.driver.api.core.cql.BatchStatement;
+import com.datastax.oss.driver.api.core.cql.BatchType;
+import com.datastax.oss.driver.api.core.cql.SimpleStatement;
 import org.example.spring.model.Entity.EventEntity;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.cql.CqlTemplate;
-import org.springframework.data.cassandra.repository.CassandraRepository;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
-public class EventCassandraDao implements CassandraRepository<EventEntity, Long> {
-
+public class EventCassandraDao {
+    final String INSERT_INTO_EVENT_QUERY="INSERT INTO booking_ticket.eventEntity (id, title, date) " +
+                                         "VALUES (?, ?, ?);";
+    final String GET_MAX_ID_FROM_EVENT_QUERY ="SELECT MAX(id) FROM booking_ticket.eventEntity";
 
     private CqlTemplate template;
+    private CassandraOperations cassandraTemplate;
 
     @Autowired
-    public EventCassandraDao(CqlTemplate template) {
+    @SuppressWarnings(value = "all")
+    public EventCassandraDao(CqlTemplate template, CassandraOperations cassandraTemplate) {
         this.template = template;
+        this.cassandraTemplate = cassandraTemplate;
     }
 
-
-    @Override
-    public EventEntity save(EventEntity entity) {
-        LocalDate localDate= LocalDate.from(entity.getDate().toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDateTime());
-        System.out.println(localDate);
-        if(entity.getId()==0){
-            Integer new_id=null;
-            Long max=template.queryForObject("SELECT MAX(id) FROM booking_ticket.eventEntity", Long.class);
-            if(max==null){
-                max= Long.valueOf(0);
-            }
-            System.out.println("max "+max);
-            template.execute("INSERT INTO booking_ticket.eventEntity (id, title, date) VALUES (?, ?, ?);",max+1, entity.getTitle(), localDate);
+    public void save(EventEntity entity) {
+        LocalDate localDate = LocalDate.from(entity.getDate().toInstant()
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDateTime());
+        if (entity.getId() == 0) {
+            Long max = getMaxId();
+            template.execute(INSERT_INTO_EVENT_QUERY, max + 1, entity.getTitle(), localDate);
+        } else {
+            template.execute(INSERT_INTO_EVENT_QUERY, entity.getId(), entity.getTitle(), localDate);
         }
-        else{
-            //final string fixme everywhere
-            template.execute("INSERT INTO booking_ticket.eventEntity (id, title, date) VALUES (?, ?, ?);",entity.getId(), entity.getTitle(), localDate);
+    }
+
+    public void saveBatchList(List<EventEntity> list) {
+        LocalDate localDate = null;
+        CqlSession session = CqlSession.builder().withKeyspace("booking_ticket").build();
+        for (int i = 0; i < list.size(); i++) {
+            Date date = list.get(i).getDate();
+            localDate = Instant.ofEpochMilli(date.getTime())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            SimpleStatement simpleStatement = SimpleStatement.newInstance(
+                    "INSERT INTO booking_ticket.eventEntity (id, title, date) VALUES (?, ?, ?);",
+                             list.get(i).getId(), list.get(i).getTitle(), localDate);
+            BatchStatement batchStatements = BatchStatement.newInstance(BatchType.UNLOGGED, simpleStatement);
+            session.execute(batchStatements);
         }
-        return null;
     }
-
-    @Override
-    public <S extends EventEntity> List<S> saveAll(Iterable<S> iterable) {
-        return null;
-    }
-
-    @Override
-    public Optional<EventEntity> findById(Long aLong) {
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(Long aLong) {
-        return false;
-    }
-
-    @Override
-    public List<EventEntity> findAll() {
-        return null;
-    }
-
-    @Override
-    public List<EventEntity> findAllById(Iterable<Long> iterable) {
-        return null;
-    }
-
-    @Override
-    public long count() {
-        return 0;
-    }
-
-    @Override
-    public void deleteById(Long aLong) {
-
-    }
-
-    @Override
-    public void delete(EventEntity eventEntity) {
-
-    }
-
-    @Override
-    public void deleteAllById(Iterable<? extends Long> longs) {
-
-    }
-
-    @Override
-    public void deleteAll(Iterable<? extends EventEntity> iterable) {
-
-    }
-
-    @Override
-    public void deleteAll() {
-
-    }
-
-    @Override
-    public Slice<EventEntity> findAll(Pageable pageable) {
-        return null;
-    }
-
-    @Override
-    public <S extends EventEntity> S insert(S s) {
-        return null;
-    }
-
-    @Override
-    public <S extends EventEntity> List<S> insert(Iterable<S> iterable) {
-        return null;
+    public Long getMaxId(){
+        Long maxId = template.queryForObject(GET_MAX_ID_FROM_EVENT_QUERY, Long.class);
+        if (maxId == null) {
+            maxId = Long.valueOf(0);
+        }
+        return maxId;
     }
 }

@@ -9,6 +9,7 @@ import org.example.spring.dao.sqlDaoImpl.UserSqlDaoImpl;
 import org.example.spring.model.Entity.EventEntity;
 import org.example.spring.model.Entity.TicketEntity;
 import org.example.spring.model.Entity.UserEntity;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -24,7 +25,11 @@ public class FromSQLToCassandraMigrationService {
     private EventCassandraDao eventCassandraDao;
     private TicketCassandraDao ticketCassandraDao;
 
-    public FromSQLToCassandraMigrationService(EventSqlDaoImpl eventSqlDao, UserSqlDaoImpl userSqlDao, TicketSQLDaoImpl ticketSQLDao, UserCassandraDao userCassandraDao, EventCassandraDao eventCassandraDao, TicketCassandraDao ticketCassandraDao) {
+    @Autowired
+    public FromSQLToCassandraMigrationService(
+            EventSqlDaoImpl eventSqlDao, UserSqlDaoImpl userSqlDao,
+            TicketSQLDaoImpl ticketSQLDao, UserCassandraDao userCassandraDao,
+            EventCassandraDao eventCassandraDao, TicketCassandraDao ticketCassandraDao) {
         this.eventSqlDao = eventSqlDao;
         this.userSqlDao = userSqlDao;
         this.ticketSQLDao = ticketSQLDao;
@@ -36,8 +41,6 @@ public class FromSQLToCassandraMigrationService {
     public FromSQLToCassandraMigrationService() {
     }
 
-
-
     @Transactional
     public void getSqlData() {
         eventEntityList = eventSqlDao.getAllEventEntity();
@@ -46,10 +49,8 @@ public class FromSQLToCassandraMigrationService {
     }
 
     public void migrateDataToCassandra() {
-
-        for (int i = 0; i < userEntityList.size(); i++) {
-            userCassandraDao.save(userEntityList.get(i));
-        }
-
+        userCassandraDao.saveBatchList(userEntityList);
+        eventCassandraDao.saveBatchList(eventEntityList);
+        ticketCassandraDao.saveBatchList(ticketEntityList);
     }
 }

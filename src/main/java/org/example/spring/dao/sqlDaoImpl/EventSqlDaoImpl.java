@@ -30,19 +30,19 @@ public class EventSqlDaoImpl {
     public void addEventEntity(EventEntity eventEntity) {
         jdbcTemplate.update(ADD_EVENT, eventEntity.getTitle(), eventEntity.getDate());
     }
+
     public void addEventEntityWithID(EventEntity eventEntity) {
         jdbcTemplate.update(ADD_EVENT_WITH_ID, eventEntity.getId(), eventEntity.getTitle(), eventEntity.getDate());
     }
+
     private class EventEntityRowMapper implements RowMapper<EventEntity> {
 
         @Override
         public EventEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-
             EventEntity eventEntity = new EventEntity();
             eventEntity.setId(rs.getInt("id"));
             eventEntity.setTitle(rs.getString("title"));
             eventEntity.setDate(rs.getDate("date"));
-
             return eventEntity;
         }
     }

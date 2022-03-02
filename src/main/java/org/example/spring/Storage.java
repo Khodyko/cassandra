@@ -77,7 +77,6 @@ public class Storage implements Serializable {
         this.eventMap = eventMap;
     }
 
-
     public void initMethod() {
         logger.log(DEBUG, Thread.currentThread()
                 .getStackTrace()[1].getMethodName() + " method start");
@@ -85,6 +84,4 @@ public class Storage implements Serializable {
         userMap = jsonReader.readFileJson(userFilePath, UserEntity.class);
         ticketMap = jsonReader.readFileJson(ticketFilePath, TicketEntity.class);
     }
-
-
 }

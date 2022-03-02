@@ -16,8 +16,10 @@ import java.util.List;
 public class TicketSQLDaoImpl {
 
     private final String SELECT_ALL_QUERY = "SELECT * FROM ticketEntity";
-    private final String ADD_TICKET = "INSERT INTO ticketEntity (eventId, userId, category, place) values (?, ?, ?, ?)";
-    private final String ADD_TICKET_WITH_ID = "INSERT INTO ticketEntity (id, eventId, userId, category, place) values (?, ?, ?, ?, ?)";
+    private final String ADD_TICKET = "INSERT INTO ticketEntity (eventId, userId, category, place) " +
+                                                                 "values (?, ?, ?, ?)";
+    private final String ADD_TICKET_WITH_ID = "INSERT INTO ticketEntity (id, eventId, userId, category, place)" +
+                                                                  " values (?, ?, ?, ?, ?)";
     private JdbcTemplate jdbcTemplate;
 
     @Autowired
@@ -30,18 +32,20 @@ public class TicketSQLDaoImpl {
     }
 
     public void addTicketEntity(TicketEntity ticketEntity) {
-        jdbcTemplate.update(ADD_TICKET, ticketEntity.getEventId(), ticketEntity.getUserId(), ticketEntity.getCategory().getName(), ticketEntity.getPlace());
+        jdbcTemplate.update(ADD_TICKET, ticketEntity.getEventId(), ticketEntity.getUserId(),
+                                ticketEntity.getCategory().getName(), ticketEntity.getPlace());
     }
 
     public void addTicketEntityWithID(TicketEntity ticketEntity) {
-        jdbcTemplate.update(ADD_TICKET_WITH_ID, ticketEntity.getId(), ticketEntity.getEventId(), ticketEntity.getUserId(), ticketEntity.getCategory().getName(), ticketEntity.getPlace());
+        jdbcTemplate.update(ADD_TICKET_WITH_ID, ticketEntity.getId(), ticketEntity.getEventId(),
+                                ticketEntity.getUserId(), ticketEntity.getCategory().getName(),
+                                ticketEntity.getPlace());
     }
 
     private class TicketEntityRowMapper implements RowMapper<TicketEntity> {
 
         @Override
         public TicketEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-
            TicketEntity ticketEntity = new TicketEntity();
             ticketEntity.setId(rs.getInt("id"));
             ticketEntity.setEventId(rs.getInt("eventId"));

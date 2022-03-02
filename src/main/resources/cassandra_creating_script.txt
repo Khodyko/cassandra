@@ -1,0 +1,19 @@
+CREATE KEYSPACE "booking_ticket" WITH REPLICATION=
+           {'class': 'SimpleStrategy','replication_factor':1};
+
+CREATE TABLE booking_ticket.userEntity (
+    id bigint PRIMARY KEY,
+    name text,
+    email text);
+
+CREATE TABLE booking_ticket.ticketEntity (
+     id bigint PRIMARY KEY,
+     eventId bigint,
+     userId bigint,
+     category text,
+     place int);
+
+ CREATE TABLE booking_ticket.eventEntity (
+    id bigint PRIMARY KEY,
+    title text,
+    date date);

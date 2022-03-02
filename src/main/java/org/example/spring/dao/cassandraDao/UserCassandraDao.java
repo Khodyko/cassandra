@@ -1,23 +1,19 @@
 package org.example.spring.dao.cassandraDao;
 
-
 import org.example.spring.model.Entity.UserEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.cassandra.core.CassandraOperations;
 import org.springframework.data.cassandra.core.cql.CqlTemplate;
-import org.springframework.data.cassandra.repository.CassandraRepository;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Slice;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
-public class UserCassandraDao implements CassandraRepository<UserEntity, Long> {
+public class UserCassandraDao {
+    final String INSERT_INTO_USER_QUERY="INSERT INTO booking_ticket.userEntity (id, name, email)" +
+                                        " VALUES (?, ?, ?);";
+    final String GET_MAX_ID_FROM_USER_QUERY ="SELECT MAX(id) FROM booking_ticket.eventEntity";
     private CqlTemplate template;
-
-
     private CassandraOperations cassandraTemplate;
-
     @Autowired
     @SuppressWarnings(value = "all")
     public UserCassandraDao(CqlTemplate template, CassandraOperations cassandraTemplate) {
@@ -25,92 +21,28 @@ public class UserCassandraDao implements CassandraRepository<UserEntity, Long> {
         this.cassandraTemplate = cassandraTemplate;
     }
 
-    @Override
-    public UserEntity save(UserEntity entity) {
-
-        System.out.println("warn!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1" + cassandraTemplate.count(UserEntity.class));
-        System.out.println("warn!!!!!!!!!!!!!!!!!!1" + cassandraTemplate.count(UserEntity.class));
+    public void save(UserEntity entity) {
+        List<UserEntity> list=new ArrayList<>();
+        cassandraTemplate.batchOps().insert(list).execute();
         if (entity.getId() == 0) {
-            Integer new_id = null;
-            Long max = template.queryForObject("SELECT MAX(id) FROM booking_ticket.userEntity;", Long.class);
-            if (max == null) {
-                max = Long.valueOf(0);
-            }
-            System.out.println("max " + max);
-            template.execute("INSERT INTO booking_ticket.userEntity (id, name, email) VALUES (?, ?, ?);", max + 1, entity.getName(), entity.getEmail());
+            Long max = getMaxId();
+            template.execute(INSERT_INTO_USER_QUERY, max + 1, entity.getName(), entity.getEmail());
         } else {
-            template.execute("INSERT INTO booking_ticket.userEntity (id, name, email) VALUES (?, ?, ?);", entity.getId(), entity.getName(), entity.getEmail());
+            template.execute(INSERT_INTO_USER_QUERY, entity.getId(), entity.getName(), entity.getEmail());
         }
-        return null;
     }
 
-    @Override
-    public <S extends UserEntity> List<S> saveAll(Iterable<S> iterable) {
-        return null;
+    public void saveBatchList(List<UserEntity> list){
+        for (int i = 0; i < list.size(); i++) {
+            cassandraTemplate.batchOps().insert(list.get(i)).execute();
+        }
     }
 
-    @Override
-    public Optional<UserEntity> findById(Long aLong) {
-        return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(Long aLong) {
-        return false;
-    }
-
-    @Override
-    public List<UserEntity> findAll() {
-        return null;
-    }
-
-    @Override
-    public List<UserEntity> findAllById(Iterable<Long> iterable) {
-        return null;
-    }
-
-    @Override
-    public long count() {
-        return 0;
-    }
-
-    @Override
-    public void deleteById(Long aLong) {
-
-    }
-
-    @Override
-    public void delete(UserEntity userEntity) {
-
-    }
-
-    @Override
-    public void deleteAllById(Iterable<? extends Long> longs) {
-
-    }
-
-    @Override
-    public void deleteAll(Iterable<? extends UserEntity> iterable) {
-
-    }
-
-    @Override
-    public void deleteAll() {
-
-    }
-
-    @Override
-    public Slice<UserEntity> findAll(Pageable pageable) {
-        return null;
-    }
-
-    @Override
-    public <S extends UserEntity> S insert(S s) {
-        return null;
-    }
-
-    @Override
-    public <S extends UserEntity> List<S> insert(Iterable<S> iterable) {
-        return null;
+    public Long getMaxId(){
+        Long maxId = template.queryForObject(GET_MAX_ID_FROM_USER_QUERY, Long.class);
+        if (maxId == null) {
+            maxId = Long.valueOf(0);
+        }
+        return maxId;
     }
 }
