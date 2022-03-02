@@ -1,0 +1,15 @@
+{
+  "ticket:1":
+  { "id" : "1",
+    "eventId": "1",
+    "userId": "1",
+    "category" : "BAR",
+    "place" : "1"},
+  "ticket:2":
+  { "id" : "2",
+    "eventId" : "2",
+    "userId": "2",
+    "category" : "BAR",
+    "place" : "1"}
+
+}

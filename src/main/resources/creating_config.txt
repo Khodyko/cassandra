@@ -1,0 +1,34 @@
+CREATE KEYSPACE "booking_ticket" WITH REPLICATION=
+           {'class': 'SimpleStrategy','replication_factor':1};
+CREATE TABLE booking_ticket.userEntity (
+   id bigint PRIMARY KEY,
+   name text,
+   email text);
+
+
+   CREATE TABLE booking_ticket.ticketEntity (
+      id bigint PRIMARY KEY,
+      eventId bigint,
+      userId bigint,
+      category text,
+      place int);
+
+
+ CREATE TABLE booking_ticket.eventEntity (
+      id bigint PRIMARY KEY,
+      title text,
+      date date);
+
+<!--    <cassandra:session  contact-points="localhost" port="9042" keyspace-name="booking_ticket" local-datacenter="datacenter1"/>-->
+
+    <cassandra:mapping entity-base-packages="org.example.spring.model.Entity"/>
+    <!-- REQUIRED: The default Cassandra converter used by `CassandraTemplate` -->
+    <cassandra:converter />
+    <!-- REQUIRED: The Cassandra template is the foundation of all Spring
+Data Cassandra -->
+    <cassandra:template id="cassandraTemplate" />
+
+
+    <!-- OPTIONAL: If you use Spring Data for Apache Cassandra repositories, add
+        your base packages to scan here -->
+    <cassandra:repositories base-package="org.example.spring.dao.cassandraDao" />

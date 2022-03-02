@@ -1,0 +1,146 @@
+<?xml version='1.0'?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:cassandra="http://www.springframework.org/schema/data/cassandra"
+       xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+       xsi:schemaLocation="http://www.springframework.org/schema/cql http://www.springframework.org/schema/cql/spring-cql-3.0.xsd
+    http://www.springframework.org/schema/data/cassandra http://www.springframework.org/schema/data/cassandra/spring-cassandra-3.0.xsd
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.2.xsd http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd http://www.springframework.org/schema/data/jpa https://www.springframework.org/schema/data/jpa/spring-jpa.xsd">
+
+
+    <context:annotation-config/>
+    <bean id="booking"
+          class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+<!--                <jpa:repositories base-package="org.example.spring.dao.cassandraDao"/>-->
+        <property name="properties">
+            <value>
+                event.file.path=src/main/resources/event_data.json
+                ticket.file.path=src/main/resources/ticket_data.json
+                user.file.path=src/main/resources/user_data.json
+                cassandra.contact-points=127.0.0.1
+                cassandra.keyspace=booking_ticket
+            </value>
+        </property>
+    </bean>
+    <!--Cassandra-->
+
+    <!-- ТРЕБУЕТСЯ: сеанс Cassandra, созданный из кластера и присоединенный
+      к пространству ключей -->
+    <cassandra:session id="cassandraSession" keyspace-name="${cassandra.keyspace}" contact-points="${cassandra.contact-points}" local-datacenter="datacenter1"/>
+
+    <!-- ТРЕБУЕТСЯ:Контекст отображения Cassandra по умолчанию, используемый CassandraConverter -->
+    <cassandra:mapping/>
+
+    <!-- ТРЕБУЕТСЯ: Конвертер Cassandra по умолчанию, используемый CassandraTemplate -->
+    <cassandra:converter id="cassandraConverter"/>
+
+    <!-- ТРЕБУЕТСЯ: Шаблон Cassandra является строительным блоком всех Spring
+      Data Cassandra -->
+    <cassandra:template id="cassandraTemplate"/>
+
+
+    <!-- НЕОБЯЗАТЕЛЬНО: если вы используете репозитории Spring Data Cassandra, добавьте
+      свои базовые пакеты для сканирования здесь -->
+    <cassandra:repositories base-package="org.example.spring.dao.cassandraDao"/>
+    <cassandra:cql-template session-ref="cassandraSession" id="template"></cassandra:cql-template>
+
+
+    <!-- REQUIRED: The Cassandra Session -->
+    <!--    <cassandra:session contact-points="${cassandra.contactpoints}" keyspace-name="${cassandra.keyspace}" />-->
+
+    <!-- REQUIRED: The default Cassandra mapping context used by `CassandraConverter` -->
+    <!--    <cassandra:mapping>-->
+    <!--        <cassandra:user-type-resolver keyspace-name="${cassandra.keyspace}" />-->
+    <!--    </cassandra:mapping>-->
+
+    <!--TransactionSQL-->
+    <bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="DataSource" ref="DataSource"/>
+    </bean>
+    <tx:advice id="txAdvice" transaction-manager="txManager">
+        <tx:attributes>
+            <tx:method name="get*" read-only="true"/>
+            <tx:method name="*"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--    <aop:config>-->
+    <!--        <aop:pointcut id="fooServiceOperation"-->
+    <!--                      expression="execution(* org.example.spring.service.serviceImpl-->
+    <!--                                               .sqlToMongoMigrationService.SqlToMongoMigrationService.getSqlData())"/>-->
+    <!--        <aop:advisor advice-ref="txAdvice" pointcut-ref="fooServiceOperation"/>-->
+    <!--    </aop:config>-->
+
+    <!--    MYSQL-->
+    <bean id="DataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://localhost/ticketapp?useSSL=false"/>
+        <property name="username" value="root"/>
+        <property name="password" value="root"/>
+    </bean>
+    <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+        <property name="DataSource" ref="DataSource"></property>
+    </bean>
+
+
+    <!--    Facade-->
+    <bean id="facadeImpl" class="org.example.spring.facade.FacadeImpl">
+        <constructor-arg ref="eventServiceImpl"/>
+        <constructor-arg ref="userServiceImpl"/>
+        <constructor-arg ref="ticketServiceImpl"/>
+    </bean>
+    <!--    Service-->
+    <bean id="eventServiceImpl" class="org.example.spring.service.serviceImpl.EventServiceImpl" autowire="byName"/>
+    <bean id="userServiceImpl" class="org.example.spring.service.serviceImpl.UserServiceImpl" autowire="byName"/>
+    <bean id="ticketServiceImpl" class="org.example.spring.service.serviceImpl.TicketServiceImpl" autowire="byName"/>
+    <bean id="fromSQLToCassandraMigrationService" class="org.example.spring.service.FromSQLToCassandraMigrationService">
+        <constructor-arg ref="userCassandraDao"/>
+        <constructor-arg ref="eventSqlDaoImpl"/>
+        <constructor-arg ref="userSqlDaoImpl"/>
+        <constructor-arg ref="ticketSqlDaoImpl"/>
+        <constructor-arg ref="ticketCassandraDao"/>
+        <constructor-arg ref="eventCassandraDao"/>
+    </bean>
+    <!--    DAO-->
+    <bean id="eventDaoImpl" class="org.example.spring.dao.daoImpl.EventDaoImpl">
+        <property name="storage" ref="storage"/>
+        <property name="validatorDao" ref="validatorDao"/>
+    </bean>
+    <bean id="userDaoImpl" class="org.example.spring.dao.daoImpl.UserDaoImpl">
+        <property name="storage" ref="storage"/>
+        <property name="validatorDao" ref="validatorDao"/>
+    </bean>
+    <bean id="ticketDaoImpl" class="org.example.spring.dao.daoImpl.TicketDaoImpl">
+        <property name="storage" ref="storage"/>
+        <property name="validatorDao" ref="validatorDao"/>
+    </bean>
+    <bean id="eventSqlDaoImpl" class="org.example.spring.dao.sqlDaoImpl.EventSqlDaoImpl">
+        <constructor-arg ref="jdbcTemplate"/>
+    </bean>
+    <bean id="userSqlDaoImpl" class="org.example.spring.dao.sqlDaoImpl.UserSqlDaoImpl">
+        <constructor-arg ref="jdbcTemplate"/>
+    </bean>
+    <bean id="ticketSqlDaoImpl" class="org.example.spring.dao.sqlDaoImpl.TicketSQLDaoImpl">
+        <constructor-arg ref="jdbcTemplate"/>
+    </bean>
+    <bean class="org.example.spring.dao.cassandraDao.UserCassandraDao" name="userCassandraDao">
+        <constructor-arg ref="template"/>
+
+    </bean>
+    <bean class="org.example.spring.dao.cassandraDao.EventCassandraDao" name="eventCassandraDao">
+        <constructor-arg ref="template"/>
+    </bean>
+    <bean class="org.example.spring.dao.cassandraDao.TicketCassandraDao" name="ticketCassandraDao">
+        <constructor-arg ref="template"/>
+
+    </bean>
+
+    <bean id="validatorDao" class="org.example.spring.dao.daoImpl.ValidatorDao"/>
+
+    <bean id="storage" class="org.example.spring.Storage" init-method="initMethod">
+        <property name="jsonReader" ref="jsonReader"/>
+    </bean>
+    <bean id="jsonReader" class="org.example.spring.JsonReader"/>
+</beans>
